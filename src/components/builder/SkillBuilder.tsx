@@ -62,7 +62,8 @@ export function SkillBuilder({ wguSkills }: Props) {
       const { data, error } = await supabase
         .from("rize_skill_drafts")
         .select("*")
-        .order("rize_skill", { ascending: true });
+        .order("rize_skill", { ascending: true })
+        .range(0, 2999);
       if (error) console.error("Error fetching rize skills:", error);
       else setRizeSkills((data as RizeSkillDraft[]) || []);
       setLoadingRize(false);

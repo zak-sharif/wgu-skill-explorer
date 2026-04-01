@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -13,12 +13,6 @@ import {
 import type { ProcessedSkill, Facets } from "@/lib/types";
 import type { FuseResult } from "@/lib/search";
 import { createFuseIndex } from "@/lib/search";
-import {
-  semanticSearch,
-  preloadEmbeddings,
-  type SemanticResult,
-  type SemanticSearchStatus,
-} from "@/lib/semantic-search";
 import { supabase } from "@/lib/supabase";
 import { SearchBar } from "./SearchBar";
 import { FilterBar } from "./FilterBar";
@@ -29,7 +23,7 @@ import { RizeSkillSearch } from "./builder/RizeSkillSearch";
 import { BuilderPanel } from "./builder/BuilderPanel";
 import { ExportDrafts } from "./builder/ExportDrafts";
 import { DraggableSkillCard } from "./builder/DraggableSkillCard";
-import { Sparkles, Type, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import type { RizeSkillDraft, PinnedRsd } from "./builder/SkillBuilder";
 
@@ -45,10 +39,6 @@ export function SkillWorkspace({ skills, facets }: Props) {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(50);
   const [selectedSkill, setSelectedSkill] = useState<ProcessedSkill | null>(null);
-  const [searchMode, setSearchMode] = useState<"text" | "semantic">("text");
-  const [semanticResults, setSemanticResults] = useState<SemanticResult[]>([]);
-  const [semanticStatus, setSemanticStatus] = useState<SemanticSearchStatus>("idle");
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Builder state
   const [selectedRizeSlug, setSelectedRizeSlug] = useState<string | null>(null);
@@ -71,7 +61,8 @@ export function SkillWorkspace({ skills, facets }: Props) {
       const { data, error } = await supabase
         .from("rize_skill_drafts")
         .select("*")
-        .order("rize_skill", { ascending: true });
+        .order("rize_skill", { ascending: true })
+        .range(0, 2999);
       if (error) console.error("Error fetching rize skills:", error);
       else setRizeSkills((data as RizeSkillDraft[]) || []);
       setLoadingRize(false);
@@ -101,33 +92,13 @@ export function SkillWorkspace({ skills, facets }: Props) {
     fetchPinnedRsds();
   }, [selectedRizeSlug, rizeSkills]);
 
-  // Semantic search
-  useEffect(() => {
-    if (searchMode === "semantic") preloadEmbeddings();
-  }, [searchMode]);
-
-  useEffect(() => {
-    if (searchMode !== "semantic" || !query.trim()) {
-      setSemanticResults([]);
-      return;
-    }
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(async () => {
-      const results = await semanticSearch(query, skills, setSemanticStatus);
-      setSemanticResults(results);
-    }, 400);
-    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
-  }, [query, searchMode, skills]);
-
   const fuse = useMemo(() => createFuseIndex(skills), [skills]);
 
   const { filteredSkills, fuseResults } = useMemo(() => {
     let results: ProcessedSkill[];
     let fuseRes: FuseResult[] | null = null;
 
-    if (searchMode === "semantic" && query.trim()) {
-      results = semanticResults.map((r) => r.skill);
-    } else if (query.trim()) {
+    if (query.trim()) {
       fuseRes = fuse.search(query);
       results = fuseRes.map((r) => r.item);
     } else {
@@ -143,7 +114,7 @@ export function SkillWorkspace({ skills, facets }: Props) {
       if (fuseRes) fuseRes = fuseRes.filter((r) => r.item.collections.some((c: string) => selectedCollections.includes(c)));
     }
     return { filteredSkills: results, fuseResults: fuseRes };
-  }, [query, searchMode, semanticResults, selectedCategories, selectedCollections, skills, fuse]);
+  }, [query, selectedCategories, selectedCollections, skills, fuse]);
 
   const handleQueryChange = useCallback((q: string) => { setQuery(q); setVisibleCount(50); }, []);
   const handleShowMore = useCallback(() => { setVisibleCount((p) => p + 50); }, []);
@@ -156,13 +127,6 @@ export function SkillWorkspace({ skills, facets }: Props) {
     for (const r of fuseResults) map.set(r.item.uuid, r.matches);
     return map;
   }, [fuseResults]);
-
-  const scoreMap = useMemo(() => {
-    if (searchMode !== "semantic" || !query.trim()) return null;
-    const map = new Map<string, number>();
-    for (const r of semanticResults) map.set(r.skill.uuid, r.score);
-    return map;
-  }, [semanticResults, searchMode, query]);
 
   // Builder handlers
   const handleSelectRizeSkill = useCallback((slug: string) => {
@@ -248,12 +212,6 @@ export function SkillWorkspace({ skills, facets }: Props) {
     }
   }
 
-  const statusMessage = searchMode === "semantic" && query.trim()
-    ? semanticStatus === "loading-model" ? "Loading AI model (first time only)..."
-    : semanticStatus === "loading-embeddings" ? "Loading skill embeddings..."
-    : semanticStatus === "searching" ? "Finding semantically similar skills..." : null
-    : null;
-
   const panelOpen = builderMode && selectedRizeSlug;
 
   const content = (
@@ -272,24 +230,13 @@ export function SkillWorkspace({ skills, facets }: Props) {
                   loading={loadingRize}
                 />
                 <ExportDrafts />
-                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                  <button onClick={() => setSearchMode("text")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${searchMode === "text" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-                    <Type size={14} /> Text
-                  </button>
-                  <button onClick={() => setSearchMode("semantic")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${searchMode === "semantic" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-                    <Sparkles size={14} /> Semantic
-                  </button>
-                </div>
               </div>
             </div>
             <SearchBar
               query={query}
               onChange={handleQueryChange}
-              placeholder={searchMode === "semantic" ? 'Try "protecting sensitive patient data" or "lead a team through change"...' : "Search by skill name, statement, or keyword..."}
+              placeholder="Search by skill name, statement, or keyword..."
             />
-            {searchMode === "semantic" && (
-              <p className="mt-2 text-xs text-slate-400">Semantic search finds conceptually related skills, not just exact keyword matches.</p>
-            )}
           </div>
         </header>
 
@@ -298,12 +245,6 @@ export function SkillWorkspace({ skills, facets }: Props) {
           {/* Left: WGU Skill Browser */}
           <div className={`flex-1 overflow-y-auto transition-all ${panelOpen ? "mr-0" : ""}`}>
             <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4">
-              {statusMessage && (
-                <div className="mb-4 flex items-center gap-2 text-sm text-blue-600 bg-blue-50 rounded-lg px-4 py-2.5">
-                  <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
-                  {statusMessage}
-                </div>
-              )}
               <FilterBar
                 facets={facets}
                 selectedCategories={selectedCategories}
@@ -350,7 +291,6 @@ export function SkillWorkspace({ skills, facets }: Props) {
                   onShowMore={handleShowMore}
                   onSelectSkill={setSelectedSkill}
                   matchMap={matchMap}
-                  scoreMap={scoreMap}
                 />
               )}
             </div>

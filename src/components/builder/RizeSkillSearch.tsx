@@ -19,14 +19,15 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading }:
 
   const selectedSkill = rizeSkills.find((s) => s.rize_slug === selectedSlug);
 
-  const { attachedSkills, allSkills } = useMemo(() => {
+  const { attachedSkills, inJobsSkills, allOtherSkills } = useMemo(() => {
     const base = query
       ? rizeSkills.filter((s) => s.rize_skill.toLowerCase().includes(query.toLowerCase()))
       : rizeSkills;
 
     const attached = base.filter((s) => s.updated_by === "attached").sort((a, b) => a.rize_skill.localeCompare(b.rize_skill));
-    const rest = base.filter((s) => s.updated_by !== "attached").sort((a, b) => a.rize_skill.localeCompare(b.rize_skill));
-    return { attachedSkills: attached, allSkills: rest };
+    const inJobs = base.filter((s) => s.updated_by === "in_jobs").sort((a, b) => a.rize_skill.localeCompare(b.rize_skill));
+    const rest = base.filter((s) => s.updated_by !== "attached" && s.updated_by !== "in_jobs").sort((a, b) => a.rize_skill.localeCompare(b.rize_skill));
+    return { attachedSkills: attached, inJobsSkills: inJobs, allOtherSkills: rest };
   }, [query, rizeSkills]);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading }:
     );
   }
 
-  const noResults = attachedSkills.length === 0 && allSkills.length === 0;
+  const noResults = attachedSkills.length === 0 && inJobsSkills.length === 0 && allOtherSkills.length === 0;
 
   return (
     <div ref={containerRef} className="relative">
@@ -133,13 +134,23 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading }:
                   </div>
                 )}
 
-                {/* All Skills section with sticky header */}
-                {allSkills.length > 0 && (
+                {/* In Jobs section with sticky header */}
+                {inJobsSkills.length > 0 && (
                   <div>
                     <div className="sticky top-0 bg-white px-3 pt-2 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider border-t border-b border-slate-100 z-10">
-                      All Skills ({allSkills.length})
+                      In Jobs ({inJobsSkills.length})
                     </div>
-                    {allSkills.map((s) => renderSkillRow(s, true))}
+                    {inJobsSkills.map((s) => renderSkillRow(s))}
+                  </div>
+                )}
+
+                {/* All Other Skills section with sticky header */}
+                {allOtherSkills.length > 0 && (
+                  <div>
+                    <div className="sticky top-0 bg-white px-3 pt-2 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider border-t border-b border-slate-100 z-10">
+                      All Other Skills ({allOtherSkills.length})
+                    </div>
+                    {allOtherSkills.map((s) => renderSkillRow(s, true))}
                   </div>
                 )}
               </>
