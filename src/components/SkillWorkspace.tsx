@@ -168,7 +168,24 @@ export function SkillWorkspace({ skills, facets }: Props) {
   const handleSelectRizeSkill = useCallback((slug: string) => {
     setSelectedRizeSlug(slug);
     setBuilderMode(true);
-  }, []);
+
+    // Auto-filter WGU skills to the matching category
+    const rize = rizeSkills.find((s) => s.rize_slug === slug);
+    if (rize) {
+      // Check if the Lightcast skill name matches a WGU category
+      const matchingCat = facets.categories.find(
+        (c) => c.name.toLowerCase() === rize.rize_skill.toLowerCase()
+      );
+      if (matchingCat) {
+        setSelectedCategories([matchingCat.name]);
+      } else {
+        // Clear category filter and let search handle it
+        setSelectedCategories([]);
+        setQuery(rize.rize_skill);
+      }
+      setVisibleCount(50);
+    }
+  }, [rizeSkills, facets.categories]);
 
   const handlePinRsd = useCallback(async (skill: ProcessedSkill) => {
     if (!selectedRizeSlug) return;

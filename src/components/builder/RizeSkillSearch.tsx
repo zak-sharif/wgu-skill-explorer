@@ -19,9 +19,16 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading }:
 
   const selectedSkill = rizeSkills.find((s) => s.rize_slug === selectedSlug);
 
-  const filtered = query
+  // Sort: attached skills first, then alphabetical. Filter by search query.
+  const filtered = (query
     ? rizeSkills.filter((s) => s.rize_skill.toLowerCase().includes(query.toLowerCase()))
-    : rizeSkills;
+    : rizeSkills
+  ).sort((a, b) => {
+    const aAttached = a.updated_by === "attached" ? 0 : 1;
+    const bAttached = b.updated_by === "attached" ? 0 : 1;
+    if (aAttached !== bAttached) return aAttached - bAttached;
+    return a.rize_skill.localeCompare(b.rize_skill);
+  });
 
   // Close on click outside
   useEffect(() => {
@@ -96,25 +103,39 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading }:
             {filtered.length === 0 ? (
               <div className="px-3 py-4 text-sm text-slate-400 text-center">No skills found</div>
             ) : (
-              filtered.map((skill) => (
-                <button
-                  key={skill.rize_slug}
-                  onClick={() => {
-                    onSelect(skill.rize_slug);
-                    setOpen(false);
-                    setQuery("");
-                  }}
-                  className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors ${
-                    skill.rize_slug === selectedSlug ? "bg-blue-50" : ""
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${skill.draft_statement ? "bg-green-500" : "bg-slate-300"}`} />
-                  <span className="truncate flex-1">{skill.rize_skill}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${statusColor(skill.status)}`}>
-                    {skill.status}
-                  </span>
-                </button>
-              ))
+              <>
+                {/* Section: Course-attached skills */}
+                {filtered.some((s) => s.updated_by === "attached") && !query && (
+                  <div className="px-3 pt-2 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">In Courses</div>
+                )}
+                {filtered.filter((s) => query || s.updated_by === "attached").map((skill, idx) => {
+                  // Add separator between attached and unattached when not searching
+                  const isFirstUnattached = !query && skill.updated_by !== "attached" && idx > 0 && filtered[idx - 1]?.updated_by === "attached";
+                  return (
+                    <div key={skill.rize_slug}>
+                      {isFirstUnattached && (
+                        <div className="px-3 pt-3 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider border-t border-slate-100 mt-1">All Skills</div>
+                      )}
+                      <button
+                        onClick={() => {
+                          onSelect(skill.rize_slug);
+                          setOpen(false);
+                          setQuery("");
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors ${
+                          skill.rize_slug === selectedSlug ? "bg-blue-50" : ""
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${skill.draft_statement ? "bg-green-500" : "bg-slate-300"}`} />
+                        <span className={`truncate flex-1 ${skill.updated_by !== "attached" && !query ? "text-slate-400" : ""}`}>{skill.rize_skill}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${statusColor(skill.status)}`}>
+                          {skill.status}
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </>
             )}
           </div>
         </div>
