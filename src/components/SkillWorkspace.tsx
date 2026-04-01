@@ -54,17 +54,26 @@ export function SkillWorkspace({ skills, facets }: Props) {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  // Fetch Lightcast skills
+  // Fetch all Lightcast skills (paginate past Supabase 1000-row limit)
   useEffect(() => {
     async function fetchRizeSkills() {
       setLoadingRize(true);
-      const { data, error } = await supabase
-        .from("rize_skill_drafts")
-        .select("*")
-        .order("rize_skill", { ascending: true })
-        .range(0, 2999);
-      if (error) console.error("Error fetching rize skills:", error);
-      else setRizeSkills((data as RizeSkillDraft[]) || []);
+      const allRows: RizeSkillDraft[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("rize_skill_drafts")
+          .select("*")
+          .order("rize_skill", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) { console.error("Error fetching rize skills:", error); break; }
+        if (!data || data.length === 0) break;
+        allRows.push(...(data as RizeSkillDraft[]));
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      setRizeSkills(allRows);
       setLoadingRize(false);
     }
     fetchRizeSkills();
