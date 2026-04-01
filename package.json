@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "prepare-data": "tsx scripts/prepare-data.ts",
-    "prebuild": "npm run prepare-data"
+    "prebuild": "test -f data/raw/wgu-all-skills.json && npm run prepare-data || echo 'Skipping prepare-data (raw data not present)'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
