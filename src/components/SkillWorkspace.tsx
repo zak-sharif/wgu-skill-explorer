@@ -265,7 +265,6 @@ export function SkillWorkspace({ skills, facets }: Props) {
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-2xl font-bold text-slate-900">WGU Skill Explorer</h1>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-400">{draftedCount}/{rizeSkills.length} drafted</span>
                 <RizeSkillSearch
                   rizeSkills={rizeSkills}
                   selectedSlug={selectedRizeSlug}
