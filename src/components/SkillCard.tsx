@@ -75,15 +75,11 @@ export const SkillCard = memo(function SkillCard({ skill, matches, semanticScore
       </div>
 
       <h3 className="font-semibold text-lg text-slate-900 mb-1.5">
-        {nameMatch
-          ? highlightText(skill.skillName, nameMatch.indices as unknown as [number, number][])
-          : skill.skillName}
+        {skill.skillName}
       </h3>
 
       <p className="text-base text-slate-700 italic mb-3 leading-relaxed">
-        {statementMatch
-          ? highlightText(skill.skillStatement, statementMatch.indices as unknown as [number, number][])
-          : skill.skillStatement}
+        {skill.skillStatement}
       </p>
 
       {displayedKeywords.length > 0 && (
