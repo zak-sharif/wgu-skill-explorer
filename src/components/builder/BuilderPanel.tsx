@@ -147,7 +147,9 @@ export function BuilderPanel({
             {generating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
             {generating ? "Generating..." : "Generate with AI"}
           </button>
-          <span className="text-xs text-slate-400">{draftStatement.length} chars</span>
+          <span className={`text-xs ${draftStatement.length > 459 ? "text-red-500 font-medium" : "text-slate-400"}`}>
+            {draftStatement.length}/459
+          </span>
           {generateError && <span className="text-xs text-red-500">{generateError}</span>}
         </div>
       </div>

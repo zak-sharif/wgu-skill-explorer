@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 const anthropic = new Anthropic();
 
 const DAILY_LIMIT = 200; // ~$1/day at Sonnet pricing
+const MAX_CHARS = 459; // longest WGU skill statement
 
 async function checkDailyLimit(): Promise<{ allowed: boolean; used: number }> {
   const today = new Date().toISOString().split("T")[0];
@@ -62,9 +63,17 @@ export async function POST(request: Request) {
       messages: [
         {
           role: "user",
-          content: `You are a curriculum designer at a university. Given these WGU Rich Skill Descriptors that relate to the skill '${rizeSkill}', write a concise skill definition (1-2 sentences) that describes what this skill means and what a learner who has this skill can do. Focus on being clear, actionable, and employer-relevant. Do not use jargon. Just return the statement, no preamble.
+          content: `You are a curriculum designer at a university. Given these WGU Rich Skill Descriptors that relate to the skill '${rizeSkill}', write a concise skill definition that describes what this skill means and what a learner who has this skill can do.
 
-WGU Rich Skill Descriptors:
+Rules:
+- Be as brief as possible. Aim for 1 sentence (under 100 characters is ideal).
+- Hard limit: ${MAX_CHARS} characters maximum.
+- Be clear, actionable, and employer-relevant.
+- No jargon, no filler words, no preamble.
+- Start with a verb (e.g., "Apply...", "Analyze...", "Design...").
+- Just return the statement, nothing else.
+
+WGU Rich Skill Descriptors for reference:
 ${rsdList}`,
         },
       ],
