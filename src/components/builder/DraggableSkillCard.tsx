@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { GripVertical } from "lucide-react";
 import type { ProcessedSkill } from "@/lib/types";
@@ -8,7 +9,7 @@ interface Props {
   skill: ProcessedSkill;
 }
 
-export function DraggableSkillCard({ skill }: Props) {
+export const DraggableSkillCard = memo(function DraggableSkillCard({ skill }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: skill.uuid,
     data: {
@@ -59,4 +60,4 @@ export function DraggableSkillCard({ skill }: Props) {
       </div>
     </div>
   );
-}
+});

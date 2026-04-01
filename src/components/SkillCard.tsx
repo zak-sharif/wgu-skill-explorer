@@ -2,7 +2,7 @@
 
 import type { ProcessedSkill } from "@/lib/types";
 import type { FuseResult } from "@/lib/search";
-import { ReactNode } from "react";
+import { ReactNode, memo } from "react";
 
 interface Props {
   skill: ProcessedSkill;
@@ -45,7 +45,7 @@ function highlightText(text: string, indices: readonly [number, number][]): Reac
   return parts;
 }
 
-export function SkillCard({ skill, matches, semanticScore, onClick }: Props) {
+export const SkillCard = memo(function SkillCard({ skill, matches, semanticScore, onClick }: Props) {
   // Find matches for specific fields
   const nameMatch = matches?.find((m: { key?: string }) => m.key === "skillName");
   const statementMatch = matches?.find((m: { key?: string }) => m.key === "skillStatement");
@@ -105,4 +105,4 @@ export function SkillCard({ skill, matches, semanticScore, onClick }: Props) {
       )}
     </button>
   );
-}
+});

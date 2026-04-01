@@ -256,8 +256,8 @@ export function SkillWorkspace({ skills, facets }: Props) {
 
   const panelOpen = builderMode && selectedRizeSlug;
 
-  return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+  const content = (
+    <>
       <div className="min-h-screen bg-slate-50 flex flex-col">
         {/* Header */}
         <header className="bg-white border-b border-slate-200 shrink-0">
@@ -383,7 +383,20 @@ export function SkillWorkspace({ skills, facets }: Props) {
           )}
         </div>
 
-        {/* Drag overlay */}
+      </div>
+
+      {/* Skill detail modal (only in non-builder mode) */}
+      {!builderMode && (
+        <SkillModal skill={selectedSkill} onClose={() => setSelectedSkill(null)} />
+      )}
+    </>
+  );
+
+  // Only wrap in DndContext when builder mode is active (avoids overhead otherwise)
+  if (builderMode) {
+    return (
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        {content}
         <DragOverlay>
           {activeDragSkill ? (
             <div className="bg-white rounded-lg border-2 border-blue-400 shadow-xl p-3 w-[300px] opacity-90">
@@ -397,12 +410,9 @@ export function SkillWorkspace({ skills, facets }: Props) {
             </div>
           ) : null}
         </DragOverlay>
-      </div>
+      </DndContext>
+    );
+  }
 
-      {/* Skill detail modal (only in non-builder mode) */}
-      {!builderMode && (
-        <SkillModal skill={selectedSkill} onClose={() => setSelectedSkill(null)} />
-      )}
-    </DndContext>
-  );
+  return content;
 }
