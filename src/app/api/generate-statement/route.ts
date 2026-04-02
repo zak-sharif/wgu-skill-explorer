@@ -1,8 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { supabase } from "@/lib/supabase";
 
-const anthropic = new Anthropic();
-
 const DAILY_LIMIT = 200; // ~$1/day at Sonnet pricing
 const MAX_CHARS = 459; // longest WGU skill statement
 
@@ -57,6 +55,15 @@ export async function POST(request: Request) {
       )
       .join("\n");
 
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return Response.json(
+        { error: "ANTHROPIC_API_KEY not configured" },
+        { status: 500 }
+      );
+    }
+
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 300,
@@ -85,8 +92,9 @@ ${rsdList}`,
     return Response.json({ statement, dailyUsed: used + 1, dailyLimit: DAILY_LIMIT });
   } catch (error) {
     console.error("Error generating statement:", error);
+    const msg = error instanceof Error ? error.message : "Unknown error";
     return Response.json(
-      { error: "Failed to generate statement" },
+      { error: `Failed to generate statement: ${msg}` },
       { status: 500 }
     );
   }
