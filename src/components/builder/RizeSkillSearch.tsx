@@ -28,15 +28,18 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading, p
 
   const selectedSkill = rizeSkills.find((s) => s.rize_slug === selectedSlug);
 
-  const { attachedSkills, inJobsSkills, allOtherSkills } = useMemo(() => {
+  const { pilotCourseSkills, otherCourseSkills, inJobsSkills, allOtherSkills } = useMemo(() => {
     const base = query
       ? rizeSkills.filter((s) => s.rize_skill.toLowerCase().includes(query.toLowerCase()))
       : rizeSkills;
 
-    const attached = base.filter((s) => s.updated_by === "attached").sort((a, b) => a.rize_skill.localeCompare(b.rize_skill));
-    const inJobs = base.filter((s) => s.updated_by === "in_jobs").sort((a, b) => a.rize_skill.localeCompare(b.rize_skill));
-    const rest = base.filter((s) => s.updated_by !== "attached" && s.updated_by !== "in_jobs").sort((a, b) => a.rize_skill.localeCompare(b.rize_skill));
-    return { attachedSkills: attached, inJobsSkills: inJobs, allOtherSkills: rest };
+    const sort = (a: RizeSkillDraft, b: RizeSkillDraft) => a.rize_skill.localeCompare(b.rize_skill);
+    const attached = base.filter((s) => s.updated_by === "attached");
+    const pilot = attached.filter((s) => pilotSkills[s.rize_slug]).sort(sort);
+    const otherCourse = attached.filter((s) => !pilotSkills[s.rize_slug]).sort(sort);
+    const inJobs = base.filter((s) => s.updated_by === "in_jobs").sort(sort);
+    const rest = base.filter((s) => s.updated_by !== "attached" && s.updated_by !== "in_jobs").sort(sort);
+    return { pilotCourseSkills: pilot, otherCourseSkills: otherCourse, inJobsSkills: inJobs, allOtherSkills: rest };
   }, [query, rizeSkills]);
 
   useEffect(() => {
@@ -87,7 +90,7 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading, p
     );
   }
 
-  const noResults = attachedSkills.length === 0 && inJobsSkills.length === 0 && allOtherSkills.length === 0;
+  const noResults = pilotCourseSkills.length === 0 && otherCourseSkills.length === 0 && inJobsSkills.length === 0 && allOtherSkills.length === 0;
 
   return (
     <div ref={containerRef} className="relative">
@@ -139,13 +142,23 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading, p
               <div className="px-3 py-4 text-sm text-slate-400 text-center">No skills found</div>
             ) : (
               <>
-                {/* In Courses section with sticky header */}
-                {attachedSkills.length > 0 && (
+                {/* Summer Pilot section */}
+                {pilotCourseSkills.length > 0 && (
                   <div>
-                    <div className="sticky top-0 bg-white px-3 pt-2 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-50 z-10">
-                      In Courses ({attachedSkills.length})
+                    <div className="sticky top-0 bg-purple-50 px-3 pt-2 pb-1 text-xs font-semibold text-purple-600 uppercase tracking-wider border-b border-purple-100 z-10">
+                      Summer Pilot ({pilotCourseSkills.length})
                     </div>
-                    {attachedSkills.map((s) => renderSkillRow(s))}
+                    {pilotCourseSkills.map((s) => renderSkillRow(s))}
+                  </div>
+                )}
+
+                {/* Other Course Skills section */}
+                {otherCourseSkills.length > 0 && (
+                  <div>
+                    <div className="sticky top-0 bg-white px-3 pt-2 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider border-t border-b border-slate-100 z-10">
+                      Other Courses ({otherCourseSkills.length})
+                    </div>
+                    {otherCourseSkills.map((s) => renderSkillRow(s))}
                   </div>
                 )}
 
