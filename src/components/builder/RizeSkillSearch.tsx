@@ -4,14 +4,23 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { Search, ChevronDown, X } from "lucide-react";
 import type { RizeSkillDraft } from "./SkillBuilder";
 
+interface PilotInfo {
+  courses: string[];
+  term: string;
+  wguMatchName: string;
+  wguMatchStatement: string;
+  matchType: string;
+}
+
 interface Props {
   rizeSkills: RizeSkillDraft[];
   selectedSlug: string | null;
   onSelect: (slug: string) => void;
   loading: boolean;
+  pilotSkills?: Record<string, PilotInfo>;
 }
 
-export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading }: Props) {
+export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading, pilotSkills = {} }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -51,6 +60,7 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading }:
   };
 
   function renderSkillRow(skill: RizeSkillDraft, dimmed?: boolean) {
+    const pilot = pilotSkills[skill.rize_slug];
     return (
       <button
         key={skill.rize_slug}
@@ -61,10 +71,15 @@ export function RizeSkillSearch({ rizeSkills, selectedSlug, onSelect, loading }:
         }}
         className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors ${
           skill.rize_slug === selectedSlug ? "bg-blue-50" : ""
-        }`}
+        } ${pilot ? "border-l-2 border-purple-400" : ""}`}
       >
         <span className={`w-2 h-2 rounded-full shrink-0 ${skill.draft_statement ? "bg-green-500" : "bg-slate-300"}`} />
         <span className={`truncate flex-1 ${dimmed ? "text-slate-400" : ""}`}>{skill.rize_skill}</span>
+        {pilot && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0 bg-purple-100 text-purple-700 font-medium">
+            Pilot
+          </span>
+        )}
         <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${statusColor(skill.status)}`}>
           {skill.status}
         </span>

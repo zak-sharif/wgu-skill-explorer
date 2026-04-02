@@ -49,10 +49,22 @@ export function SkillWorkspace({ skills, facets }: Props) {
   const [loadingRize, setLoadingRize] = useState(true);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [builderMode, setBuilderMode] = useState(false);
+  const [pilotSkills, setPilotSkills] = useState<Record<string, {
+    courses: string[];
+    term: string;
+    wguMatchName: string;
+    wguMatchStatement: string;
+    matchType: string;
+  }>>({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
+
+  // Load pilot skills data
+  useEffect(() => {
+    fetch("/pilot-skills.json").then((r) => r.json()).then(setPilotSkills);
+  }, []);
 
   // Fetch all Lightcast skills (paginate past Supabase 1000-row limit)
   useEffect(() => {
@@ -237,6 +249,7 @@ export function SkillWorkspace({ skills, facets }: Props) {
                   selectedSlug={selectedRizeSlug}
                   onSelect={handleSelectRizeSkill}
                   loading={loadingRize}
+                  pilotSkills={pilotSkills}
                 />
                 <ExportDrafts />
               </div>
@@ -327,6 +340,7 @@ export function SkillWorkspace({ skills, facets }: Props) {
                 onRemoveRsd={handleRemoveRsd}
                 onReorderRsds={handleReorderRsds}
                 onUpdateStatus={handleUpdateStatus}
+                pilotInfo={pilotSkills[selectedRizeSlug || ""] || null}
               />
             </div>
           )}

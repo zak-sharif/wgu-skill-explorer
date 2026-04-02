@@ -8,6 +8,14 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { RizeSkillDraft, PinnedRsd } from "./SkillBuilder";
 
+interface PilotInfo {
+  courses: string[];
+  term: string;
+  wguMatchName: string;
+  wguMatchStatement: string;
+  matchType: string;
+}
+
 interface Props {
   selectedSkill: RizeSkillDraft;
   pinnedRsds: PinnedRsd[];
@@ -18,6 +26,7 @@ interface Props {
   onRemoveRsd: (id: string) => void;
   onReorderRsds: (reordered: PinnedRsd[]) => void;
   onUpdateStatus: (status: "draft" | "review" | "approved") => void;
+  pilotInfo?: PilotInfo | null;
 }
 
 function SortablePinnedRsd({ rsd, onRemove }: { rsd: PinnedRsd; onRemove: () => void }) {
@@ -54,6 +63,7 @@ export function BuilderPanel({
   onRemoveRsd,
   onReorderRsds,
   onUpdateStatus,
+  pilotInfo,
 }: Props) {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -115,15 +125,32 @@ export function BuilderPanel({
 
   return (
     <div className="px-4 py-3">
-      {/* Status */}
-      <div className="flex items-center gap-2 mb-4">
+      {/* Status + Pilot badge */}
+      <div className="flex items-center gap-2 mb-3">
         <button onClick={cycleStatus} className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusColor}`}>
           {selectedSkill.status}
         </button>
+        {pilotInfo && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">
+            Summer Pilot &middot; {pilotInfo.courses.join(", ")}
+          </span>
+        )}
         <span className={`text-xs ml-auto ${saveStatus === "saved" ? "text-green-600" : saveStatus === "saving" ? "text-blue-500" : "text-slate-400"}`}>
           {saveStatus === "saved" ? "Saved" : saveStatus === "saving" ? "Saving..." : "Unsaved"}
         </span>
       </div>
+
+      {/* Best WGU Match (for pilot skills) */}
+      {pilotInfo && pilotInfo.wguMatchName && (
+        <div className="mb-3 rounded-lg border border-purple-200 bg-purple-50 p-3">
+          <div className="flex items-center gap-1.5 mb-1">
+            <h3 className="text-xs font-semibold text-purple-700 uppercase tracking-wider">Best WGU Match</h3>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-200 text-purple-600">{pilotInfo.matchType}</span>
+          </div>
+          <p className="text-xs font-medium text-purple-900">{pilotInfo.wguMatchName}</p>
+          <p className="text-xs text-purple-700 italic mt-0.5 leading-relaxed">{pilotInfo.wguMatchStatement}</p>
+        </div>
+      )}
 
       {/* Statement Editor */}
       <div className="mb-4">
