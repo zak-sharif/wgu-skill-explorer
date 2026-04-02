@@ -87,13 +87,13 @@ export function SkillModal({ skill, onClose }: Props) {
             )}
 
             {/* Occupations */}
-            {skill.occupations.length > 0 && (
+            {(skill.occupations?.length ?? 0) > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2">
                   Occupations
                 </h4>
                 <ul className="space-y-1">
-                  {skill.occupations.map((occ, i) => (
+                  {skill.occupations!.map((occ, i) => (
                     <li
                       key={`${occ.code}-${i}`}
                       className="text-sm text-slate-700"
@@ -109,7 +109,7 @@ export function SkillModal({ skill, onClose }: Props) {
             )}
 
             {/* Collections */}
-            {skill.collections.length > 0 && (
+            {(skill.collections?.length ?? 0) > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2">
                   Collections
